@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hules Automotrices - Punto de Venta</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#f59e0b; --accent2:#10b981;
+    --danger:#ef4444; --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
+  body{background:var(--bg);color:var(--txt);min-height:100vh}
+  header{background:linear-gradient(90deg,#1e293b,#0f172a);padding:14px 22px;
+    display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--accent)}
+  header h1{font-size:20px;letter-spacing:.5px}
+  header h1 span{color:var(--accent)}
+  nav{display:flex;gap:8px;padding:12px 22px;background:var(--panel);border-bottom:1px solid var(--line)}
+  nav button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    padding:9px 18px;border-radius:var(--radius);cursor:pointer;font-size:14px;transition:.2s}
+  nav button:hover{background:#31435e}
+  nav button.active{background:var(--accent);color:#0f172a;font-weight:600;border-color:var(--accent)}
+  main{padding:20px 22px;max-width:1400px;margin:0 auto}
+  .vista{display:none}
+  .vista.activa{display:block}
+  .grid-venta{display:grid;grid-template-columns:1fr 380px;gap:18px}
+  @media(max-width:900px){.grid-venta{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+  .card h3{font-size:15px;margin-bottom:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+  .filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+  select,input{width:100%;padding:9px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;color:var(--txt);font-size:14px;outline:none}
+  select:focus,input:focus{border-color:var(--accent)}
+  .btn{background:var(--accent);color:#0f172a;border:none;padding:10px 16px;border-radius:8px;
+    cursor:pointer;font-weight:600;font-size:14px;transition:.2s}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.sec{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .btn.ok{background:var(--accent2);color:#fff}
+  .btn.danger{background:var(--danger);color:#fff}
+  .btn.sm{padding:6px 12px;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  tbody tr:hover{background:var(--panel2)}
+  .prod-row{cursor:pointer}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+  .badge.ok{background:#10b98133;color:var(--accent2)}
+  .badge.low{background:#ef444433;color:#fca5a5}
+  .carrito-vacio{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
+  .item-carrito{display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .item-carrito small{display:block;color:var(--muted);font-size:11px}
+  .qty{display:flex;align-items:center;gap:6px}
+  .qty button{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);cursor:pointer;font-weight:700}
+  .total-box{border-top:2px solid var(--accent);margin-top:12px;padding-top:12px}
+  .total-linea{display:flex;justify-content:space-between;margin:4px 0;font-size:14px}
+  .total-final{font-size:22px;font-weight:700;color:var(--accent)}
+  .toggle-precio{display:flex;gap:6px;margin-bottom:12px}
+  .toggle-precio button{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);cursor:pointer;font-size:13px;font-weight:600}
+  .toggle-precio button.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .stat .val{font-size:26px;font-weight:700;color:var(--accent);margin-top:6px}
+  .stat .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  .toast{position:fixed;bottom:22px;right:22px;background:var(--accent2);color:#fff;
+    padding:12px 20px;border-radius:8px;font-weight:600;opacity:0;transition:.3s;pointer-events:none}
+  .toast.show{opacity:1}
+  h2.titulo{font-size:18px;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔧 HULES <span>AUTOMOTRICES</span> — Punto de Venta</h1>
+  <span id="fecha-hoy" style="color:var(--muted);font-size:13px"></span>
+</header>
+
+<nav>
+  <button class="active" data-vista="venta">🛒 Venta</button>
+  <button data-vista="inventario">📦 Inventario</button>
+  <button data-vista="reportes">📊 Reportes</button>
+</nav>
+
+<main>
+
+  <!-- ============ VISTA VENTA ============ -->
+  <section id="vista-venta" class="vista activa">
+    <div class="grid-venta">
+
+      <!-- Catálogo -->
+      <div>
+        <div class="card">
+          <h3>🔍 Buscar por vehículo</h3>
+          <div class="filtros">
+            <div><label>Marca</label><select id="fMarca"><option value="">Todas</option></select></div>
+            <div><label>Modelo</label><select id="fModelo"><option value="">Todos</option></select></div>
+            <div><label>Año</label><select id="fAnio"><option value="">Todos</option></select></div>
+            <div><label>Buscar por nombre/SKU</label><input id="fTexto" placeholder="Ej. buje, HUL-001..."></div>
+          </div>
+          <div style="margin-top:10px">
+            <button class="btn sec sm" onclick="limpiarFiltros()">Limpiar filtros</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Catálogo de productos <span id="contadorProd" style="color:var(--muted);font-weight:400"></span></h3>
+          <table>
+            <thead>
+              <tr><th>SKU</th><th>Producto</th><th>Aplicación</th><th>Precio</th><th>Stock</th></tr>
+            </thead>
+            <tbody id="tablaProductos"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Carrito -->
+      <div>
+        <div class="card" style="position:sticky;top:16px">
+          <h3>🧾 Ticket de venta</h3>
+
+          <div class="toggle-precio">
+            <button id="btnMostrador" class="active" onclick="setTipoCliente('mostrador')">Público</button>
+            <button id="btnTaller" onclick="setTipoCliente('taller')">Taller</button>
+          </div>
+
+          <div id="carrito"></div>
+
+          <div class="total-box" id="totalBox" style="display:none">
+            <div class="total-linea"><span>Artículos:</span><span id="numItems">0</span></div>
+            <div class="total-linea"><span>Subtotal:</span><span id="subtotal">$0</span></div>
+            <div class="total-linea"><span>IVA (16%):</span><span id="iva">$0</span></div>
+            <div class="total-linea total-final"><span>Total:</span><span id="total">$0</span></div>
+            <button class="btn ok" style="width:100%;margin-top:12px" onclick="finalizarVenta()">
+              ✅ Cobrar y cerrar venta
+            </button>
+            <button class="btn danger sm" style="width:100%;margin-top:8px" onclick="vaciarCarrito()">
+              Cancelar venta
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ VISTA INVENTARIO ============ -->
+  <section id="vista-inventario" class="vista">
+    <h2 class="titulo">📦 Gestión de inventario</h2>
+
+    <div class="card">
+      <h3>➕ Agregar nuevo producto</h3>
+      <div class="form-grid">
+        <div><label>SKU</label><input id="nSku" placeholder="HUL-011"></div>
+        <div><label>Nombre</label><input id="nNombre" placeholder="Buje estabilizadora"></div>
+        <div><label>Marca</label><input id="nMarca" placeholder="Duraflex"></div>
+        <div><label>Categoría</label><input id="nCategoria" placeholder="Suspensión"></div>
+        <div><label>Precio público</label><input id="nPMostrador" type="number" placeholder="180"></div>
+        <div><label>Precio taller</label><input id="nPTaller" type="number" placeholder="130"></div>
+        <div><label>Stock inicial</label><input id="nStock" type="number" placeholder="10"></div>
+      </div>
+      <button class="btn" onclick="agregarProducto()">Guardar producto</button>
+      <button class="btn sec" onclick="exportarDatos()">⬇️ Exportar datos (JSON)</button>
+      <button class="btn sec" onclick="document.getElementById('importFile').click()">⬆️ Importar datos</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importarDatos(event)">
+    </div>
+
+    <div class="card">
+      <h3>Productos registrados</h3>
+      <table>
+        <thead><tr><th>SKU</th><th>Producto</th><th>Marca</th><th>Categoría</th><th>P. Público</th><th>P. Taller</th><th>Stock</th><th></th></tr></thead>
+        <tbody id="tablaInventario"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ VISTA REPORTES ============ -->
+  <section id="vista-reportes" class="vista">
+    <h2 class="titulo">📊 Reportes de venta</h2>
+
+    <div class="stats">
+      <div class="stat"><div class="lbl">Ventas de hoy</div><div class="val" id="rHoy">$0</div></div>
+      <div class="stat"><div class="lbl">Tickets hoy</div><div class="val" id="rTicketsHoy">0</div></div>
+      <div class="stat"><div class="lbl">Ventas totales</div><div class="val" id="rTotal">$0</div></div>
+      <div class="stat"><div class="lbl">Tickets históricos</div><div class="val" id="rTickets">0</div></div>
+      <div class="stat"><div class="lbl">Productos en stock</div><div class="val" id="rStock">0</div></div>
+      <div class="stat"><div class="lbl">Valor inventario</div><div class="val" id="rValorInv">$0</div></div>
+    </div>
+
+    <div class="card">
+      <h3>🔥 Top 5 productos más vendidos</h3>
+      <table><thead><tr><th>Producto</th><th>Unidades</th><th>Ingresos</th></tr></thead>
+      <tbody id="tablaTop"></tbody></table>
+    </div>
+
+    <div class="card">
+      <h3>🧾 Últimas ventas</h3>
+      <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Artículos</th><th>Total</th></tr></thead>
+      <tbody id="tablaVentas"></tbody></table>
+      <button class="btn danger sm" style="margin-top:12px" onclick="borrarHistorial()">Borrar historial de ventas</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   DATOS INICIALES DE EJEMPLO (hules automotrices)
+   Aplicaciones: marca, modelo, rango de años, motor
+========================================================= */
+const PRODUCTOS_DEMO = [
+  { sku:'HUL-001', nombre:'Buje de suspensión delantero', marca:'Duraflex', categoria:'Suspensión',
+    pMostrador:180, pTaller:130, stock:24,
+    aplicaciones:[{marca:'Nissan',modelo:'Sentra',a1:2013,a2:2019,motor:'1.8L'},
+                  {marca:'Nissan',modelo:'Versa',a1:2012,a2:2019,motor:'1.6L'}] },
+  { sku:'HUL-002', nombre:'Montura de motor', marca:'Anchor', categoria:'Motor',
+    pMostrador:420, pTaller:310, stock:12,
+    aplicaciones:[{marca:'Chevrolet',modelo:'Aveo',a1:2008,a2:2018,motor:'1.6L'}] },
+  { sku:'HUL-003', nombre:'Guardapolvo de flecha', marca:'GMB', categoria:'Transmisión',
+    pMostrador:150, pTaller:105, stock:40,
+    aplicaciones:[{marca:'Volkswagen',modelo:'Jetta',a1:2005,a2:2018,motor:'2.0L'},
+                  {marca:'Volkswagen',modelo:'Golf',a1:2006,a2:2015,motor:'2.0L'}] },
+  { sku:'HUL-004', nombre:'Goma estabilizadora', marca:'Duraflex', categoria:'Suspensión',
+    pMostrador:95, pTaller:65, stock:60,
+    aplicaciones:[{marca:'Ford',modelo:'Fiesta',a1:2011,a2:2019,motor:'1.6L'},
+                  {marca:'Ford',modelo:'Focus',a1:2012,a2:2018,motor:'2.0L'}] },
+  { sku:'HUL-005', nombre:'Tope de amortiguador', marca:'KYB', categoria:'Suspensión',
+    pMostrador:260, pTaller:190, stock:18,
+    aplicaciones:[{marca:'Toyota',modelo:'Corolla',a1:2014,a2:2022,motor:'1.8L'}] },
+  { sku:'HUL-006', nombre:'Buje de barra estabilizadora', marca:'Moog', categoria:'Suspensión',
+    pMostrador:120, pTaller:85, stock:35,
+    aplicaciones:[{marca:'Honda',modelo:'Civic',a1:2012,a2:2020,motor:'1.8L'},
+                  {marca:'Honda',modelo:'CR-V',a1:2012,a2:2018,motor:'2.4L'}] },
+  { sku:'HUL-007', nombre:'Sello de válvulas', marca:'Fel-Pro', categoria:'Motor',
+    pMostrador:210, pTaller:150, stock:8,
+    aplicaciones:[{marca:'Nissan',modelo:'Sentra',a1:2007,a2:2012,motor:'2.0L'}] },
+  { sku:'HUL-008', nombre:'Junta homocinética', marca:'GSP', categoria:'Transmisión',
+    pMostrador:680, pTaller:520, stock:6,
+    aplicaciones:[{marca:'Chevrolet',modelo:'Cruze',a1:2011,a2:2019,motor:'1.8L'}] },
+  { sku:'HUL-009', nombre:'Buje de horquilla', marca:'Duraflex', categoria:'Suspensión',
+    pMostrador:140, pTaller:98, stock:22,
+    aplicaciones:[{marca:'Mazda',modelo:'Mazda 3',a1:2010,a2:2019,motor:'2.0L'}] },
+  { sku:'HUL-010', nombre:'Goma de pedal de freno', marca:'Genérico', categoria:'Accesorios',
+    pMostrador:45, pTaller:30, stock:100,
+    aplicaciones:[{marca:'Universal',modelo:'Todos',a1:1990,a2:2030,motor:'-'}] },
+];
+
+/* =========================================================
+   ESTADO Y PERSISTENCIA
+========================================================= */
+let productos = JSON.parse(localStorage.getItem('hules_productos')) || PRODUCTOS_DEMO;
+let ventas    = JSON.parse(localStorage.getItem('hules_ventas'))    || [];
+let carrito   = [];
+let tipoCliente = 'mostrador';
+
+const guardar = () => {
+  localStorage.setItem('hules_productos', JSON.stringify(productos));
+  localStorage.setItem('hules_ventas',    JSON.stringify(ventas));
+};
+const fmt = n => n.toLocaleString('es-MX',{style:'currency',currency:'MXN'});
+
+/* =========================================================
+   NAVEGACIÓN ENTRE VISTAS
+========================================================= */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick = () => {
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.vista').forEach(x=>x.classList.remove('activa'));
+    b.classList.add('active');
+    document.getElementById('vista-'+b.dataset.vista).classList.add('activa');
+    if(b.dataset.vista==='reportes') renderReportes();
+    if(b.dataset.vista==='inventario') renderInventario();
+  };
+});
+
+/* =========================================================
+   FILTROS POR VEHÍCULO (cascada marca → modelo → año)
+========================================================= */
+function llenarFiltros(){
+  const marcas = [...new Set(productos.flatMap(p=>p.aplicaciones.map(a=>a.marca)))].sort();
+  const selMarca = document.getElementById('fMarca');
+  selMarca.innerHTML = '<option value="">Todas</option>' + marcas.map(m=>`<option>${m}</option>`).join('');
+
+  selMarca.onchange = () => {
+    const marca = selMarca.value;
+    const modelos = [...new Set(
+      productos.flatMap(p=>p.aplicaciones.filter(a=>!marca||a.marca===marca).map(a=>a.modelo))
+    )].sort();
+    document.getElementById('fModelo').innerHTML =
+      '<option value="">Todos</option>' + modelos.map(m=>`<option>${m}</option>`).join('');
+    document.getElementById('fAnio').innerHTML = '<option value="">Todos</option>';
+    document.getElementById('fModelo').onchange = llenarAnios;
+    renderCatalogo();
+  };
+  document.getElementById('fModelo').onchange = llenarAnios;
+  document.getElementById('fTexto').oninput = renderCatalogo;
+}
+
+function llenarAnios(){
+  const marca  = document.getElementById('fMarca').value;
+  const modelo = document.getElementById('fModelo').value;
+  const anios = new Set();
+  productos.forEach(p=>p.aplicaciones.forEach(a=>{
+    if((!marca||a.marca===marca)&&(!modelo||a.modelo===modelo)){
+      for(let y=a.a1;y<=a.a2;y++) anios.add(y);
+    }
+  }));
+  document.getElementById('fAnio').innerHTML =
+    '<option value="">Todos</option>' +
+    [...anios].sort((a,b)=>b-a).map(y=>`<option>${y}</option>`).join('');
+  renderCatalogo();
+}
+
+function limpiarFiltros(){
+  document.getElementById('fMarca').value='';
+  document.getElementById('fModelo').innerHTML='<option value="">Todos</option>';
+  document.getElementById('fAnio').innerHTML='<option value="">Todos</option>';
+  document.getElementById('fTexto').value='';
+  renderCatalogo();
+}
+
+function productoCoincide(p){
+  const marca  = document.getElementById('fMarca').value;
+  const modelo = document.getElementById('fModelo').value;
+  const anio   = parseInt(document.getElementById('fAnio').value);
+  const texto  = document.getElementById('fTexto').value.toLowerCase().trim();
+
+  if(texto){
+    const hit = (p.nombre+p.sku+p.marca).toLowerCase().includes(texto);
+    if(!hit) return false;
+  }
+  if(!marca && !modelo && !anio) return true;
+
+  return p.aplicaciones.some(a=>{
+    if(marca  && a.marca  !== marca)  return false;
+    if(modelo && a.modelo !== modelo) return false;
+    if(anio   && !(anio>=a.a1 && anio<=a.a2)) return false;
+    return true;
+  });
+}
+
+/* =========================================================
+   RENDER CATÁLOGO
+========================================================= */
+function renderCatalogo(){
+  const tbody = document.getElementById('tablaProductos');
+  const lista = productos.filter(productoCoincide);
+  document.getElementById('contadorProd').textContent = `(${lista.length})`;
+
+  if(!lista.length){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">
+      Sin resultados. Ajusta los filtros o registra el producto.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(p=>{
+    const precio = tipoCliente==='taller' ? p.pTaller : p.pMostrador;
+    const ap = p.aplicaciones[0];
+    const aplic = p.aplicaciones.length>1
+      ? `${ap.marca} ${ap.modelo} +${p.aplicaciones.length-1}`
+      : `${ap.marca} ${ap.modelo} ${ap.a1}-${ap.a2}`;
+    const stockBadge = p.stock<=5
+      ? `<span class="badge low">${p.stock} bajo</span>`
+      : `<span class="badge ok">${p.stock}</span>`;
+    return `<tr class="prod-row" onclick="agregarAlCarrito('${p.sku}')">
+      <td><code style="color:var(--accent)">${p.sku}</code></td>
+      <td><b>${p.nombre}</b><br><small style="color:var(--muted)">${p.marca} · ${p.categoria}</small></td>
+      <td style="font-size:12px;color:var(--muted)">${aplic}</td>
+      <td><b>${fmt(precio)}</b></td>
+      <td>${stockBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* =========================================================
+   CARRITO
+========================================================= */
+function setTipoCliente(t){
+  tipoCliente = t;
+  document.getElementById('btnMostrador').classList.toggle('active', t==='mostrador');
+  document.getElementById('btnTaller').classList.toggle('active', t==='taller');
+  renderCatalogo();
+  renderCarrito();
+}
+
+function agregarAlCarrito(sku){
+  const prod = productos.find(p=>p.sku===sku);
+  if(!prod) return;
+  const item = carrito.find(i=>i.sku===sku);
+  const enCarrito = item ? item.cantidad : 0;
+  if(enCarrito + 1 > prod.stock){
+    toast('Stock insuficiente para '+prod.nombre, true);
+    return;
+  }
+  if(item) item.cantidad++;
+  else carrito.push({sku, cantidad:1});
+  renderCarrito();
+}
+
+function cambiarCantidad(sku, delta){
+  const item = carrito.find(i=>i.sku===sku);
+  if(!item) return;
+  const prod = productos.find(p=>p.sku===sku);
+  item.cantidad += delta;
+  if(item.cantidad <= 0) carrito = carrito.filter(i=>i.sku!==sku);
+  if(item.cantidad > prod.stock){ item.cantidad = prod.stock; toast('Stock máximo alcanzado', true); }
+  renderCarrito();
+}
+
+function vaciarCarrito(){ carrito = []; renderCarrito(); }
+
+function renderCarrito(){
+  const cont = document.getElementById('carrito');
+  const box  = document.getElementById('totalBox');
+
+  if(!carrito.length){
+    cont.innerHTML = '<div class="carrito-vacio">Sin artículos.<br>Haz clic en un producto del catálogo.</div>';
+    box.style.display='none';
+    return;
+  }
+
+  let subtotal = 0, numItems = 0;
+  cont.innerHTML = carrito.map(i=>{
+    const p = productos.find(x=>x.sku===i.sku);
+    const precio = tipoCliente==='taller' ? p.pTaller : p.pMostrador;
+    const importe = precio * i.cantidad;
+    subtotal += importe; numItems += i.cantidad;
+    return `<div class="item-carrito">
+      <div style="flex:1">
+        <b>${p.nombre}</b>
+        <small>${p.sku} · ${fmt(precio)} c/u</small>
+      </div>
+      <div class="qty">
+        <button onclick="cambiarCantidad('${i.sku}',-1)">−</button>
+        <span style="min-width:20px;text-align:center">${i.cantidad}</span>
+        <button onclick="cambiarCantidad('${i.sku}',1)">+</button>
+      </div>
+      <div style="min-width:80px;text-align:right"><b>${fmt(importe)}</b></div>
+    </div>`;
+  }).join('');
+
+  const iva = subtotal * 0.16;
+  document.getElementById('numItems').textContent = numItems;
+  document.getElementById('subtotal').textContent = fmt(subtotal);
+  document.getElementById('iva').textContent      = fmt(iva);
+  document.getElementById('total').textContent    = fmt(subtotal + iva);
+  box.style.display='block';
+}
+
+/* =========================================================
+   FINALIZAR VENTA
+========================================================= */
+function finalizarVenta(){
+  if(!carrito.length) return;
+
+  let subtotal = 0;
+  const detalle = carrito.map(i=>{
+    const p = productos.find(x=>x.sku===i.sku);
+    const precio = tipoCliente==='taller' ? p.pTaller : p.pMostrador;
+    subtotal += precio * i.cantidad;
+    p.stock -= i.cantidad;
+    return {sku:i.sku, nombre:p.nombre, cantidad:i.cantidad, precio};
+  });
+
+  const iva = subtotal * 0.16;
+  ventas.push({
+    fecha: new Date().toISOString(),
+    tipoCliente,
+    items: detalle,
+    subtotal, iva, total: subtotal+iva
+  });
+
+  guardar();
+  carrito = [];
+  renderCarrito();
+  renderCatalogo();
+  toast('✅ Venta registrada correctamente');
+}
+
+/* =========================================================
+   INVENTARIO
+========================================================= */
+function renderInventario(){
+  document.getElementById('tablaInventario').innerHTML = productos.map(p=>`
+    <tr>
+      <td><code style="color:var(--accent)">${p.sku}</code></td>
+      <td>${p.nombre}</td>
+      <td>${p.marca}</td>
+      <td>${p.categoria}</td>
+      <td>${fmt(p.pMostrador)}</td>
+      <td>${fmt(p.pTaller)}</td>
+      <td>${p.stock}</td>
+      <td><button class="btn danger sm" onclick="eliminarProducto('${p.sku}')">🗑</button></td>
+    </tr>`).join('');
+}
+
+function agregarProducto(){
+  const sku = document.getElementById('nSku').value.trim();
+  const nombre = document.getElementById('nNombre').value.trim();
+  const marca = document.getElementById('nMarca').value.trim() || 'Genérico';
+  const categoria = document.getElementById('nCategoria').value.trim() || 'General';
+  const pMostrador = parseFloat(document.getElementById('nPMostrador').value) || 0;
+  const pTaller = parseFloat(document.getElementById('nPTaller').value) || 0;
+  const stock = parseInt(document.getElementById('nStock').value) || 0;
+
+  if(!sku || !nombre){ toast('SKU y nombre son obligatorios', true); return; }
+  if(productos.some(p=>p.sku===sku)){ toast('Ese SKU ya existe', true); return; }
+
+  productos.push({sku, nombre, marca, categoria, pMostrador, pTaller, stock, aplicaciones:[]});
+  guardar();
+  ['nSku','nNombre','nMarca','nCategoria','nPMostrador','nPTaller','nStock']
+    .forEach(id=>document.getElementById(id).value='');
+  renderInventario(); llenarFiltros(); renderCatalogo();
+  toast('Producto agregado');
+}
+
+function eliminarProducto(sku){
+  if(!confirm('¿Eliminar '+sku+'?')) return;
+  productos = productos.filter(p=>p.sku!==sku);
+  guardar(); renderInventario(); llenarFiltros(); renderCatalogo();
+  toast('Producto eliminado');
+}
+
+/* =========================================================
+   REPORTES
+========================================================= */
+function renderReportes(){
+  const hoy = new Date().toDateString();
+  const ventasHoy = ventas.filter(v=>new Date(v.fecha).toDateString()===hoy);
+  const totalHoy  = ventasHoy.reduce((s,v)=>s+v.total,0);
+  const totalHist = ventas.reduce((s,v)=>s+v.total,0);
+
+  document.getElementById('rHoy').textContent        = fmt(totalHoy);
+  document.getElementById('rTicketsHoy').textContent  = ventasHoy.length;
+  document.getElementById('rTotal').textContent       = fmt(totalHist);
+  document.getElementById('rTickets').textContent     = ventas.length;
+
+  const stockTotal = productos.reduce((s,p)=>s+p.stock,0);
+  const valorInv   = productos.reduce((s,p)=>s+(p.stock*p.pMostrador),0);
+  document.getElementById('rStock').textContent    = stockTotal;
+  document.getElementById('rValorInv').textContent = fmt(valorInv);
+
+  // Top productos
+  const acum = {};
+  ventas.forEach(v=>v.items.forEach(it=>{
+    if(!acum[it.sku]) acum[it.sku] = {nombre:it.nombre, cant:0, ingresos:0};
+    acum[it.sku].cant += it.cantidad;
+    acum[it.sku].ingresos += it.cantidad * it.precio;
+  }));
+  const top = Object.values(acum).sort((a,b)=>b.cant-a.cant).slice(0,5);
+  document.getElementById('tablaTop').innerHTML = top.length
+    ? top.map(t=>`<tr><td>${t.nombre}</td><td>${t.cant}</td><td>${fmt(t.ingresos)}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="text-align:center;color:var(--muted)">Sin ventas aún</td></tr>';
+
+  // Últimas ventas
+  document.getElementById('tablaVentas').innerHTML = ventas.slice(-10).reverse().map(v=>`
+    <tr>
+      <td>${new Date(v.fecha).toLocaleString('es-MX')}</td>
+      <td>${v.tipoCliente==='taller'?'Taller':'Público'}</td>
+      <td>${v.items.reduce((s,i)=>s+i.cantidad,0)}</td>
+      <td><b>${fmt(v.total)}</b></td>
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--muted)">Sin ventas</td></tr>';
+}
+
+function borrarHistorial(){
+  if(!confirm('¿Borrar TODO el historial de ventas?')) return;
+  ventas = []; guardar(); renderReportes(); toast('Historial borrado');
+}
+
+/* =========================================================
+   EXPORTAR / IMPORTAR
+========================================================= */
+function exportarDatos(){
+  const data = {productos, ventas};
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hules_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+function importarDatos(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(data.productos) productos = data.productos;
+      if(data.ventas)    ventas    = data.ventas;
+      guardar(); llenarFiltros(); renderCatalogo(); renderInventario(); renderReportes();
+      toast('Datos importados');
+    }catch(err){ toast('Archivo inválido', true); }
+  };
+  reader.readAsText(file);
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+let toastTimer;
+function toast(msg, error=false){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = error ? 'var(--danger)' : 'var(--accent2)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* =========================================================
+   INICIALIZACIÓN
+========================================================= */
+document.getElementById('fecha-hoy').textContent =
+  new Date().toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+llenarFiltros();
+renderCatalogo();
+renderCarrito();
+renderInventario();
+</script>
+</body>
+</html>

@@ -1,228 +1,1050 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>POS Refacciones</title>
-  <style>
-    body { font-family: Arial; margin: 20px; }
-    .filtros, .carrito, .modal { margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 20%;
-      left: 30%;
-      width: 40%;
-      background: #fff;
-      border: 2px solid #333;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,.3);
-    }
-    .modal.activo { display: block; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APA Hules - Punto de Venta</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#f59e0b; --accent2:#10b981;
+    --danger:#ef4444; --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
+  body{background:var(--bg);color:var(--txt);min-height:100vh}
+  header{background:linear-gradient(90deg,#1e293b,#0f172a);padding:14px 22px;
+    display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--accent);flex-wrap:wrap;gap:8px}
+  header h1{font-size:20px;letter-spacing:.5px}
+  header h1 span{color:var(--accent)}
+  nav{display:flex;gap:8px;padding:12px 22px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  nav button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    padding:9px 18px;border-radius:var(--radius);cursor:pointer;font-size:14px;transition:.2s}
+  nav button:hover{background:#31435e}
+  nav button.active{background:var(--accent);color:#0f172a;font-weight:600;border-color:var(--accent)}
+  main{padding:20px 22px;max-width:1400px;margin:0 auto}
+  .vista{display:none}
+  .vista.activa{display:block}
+  .grid-venta{display:grid;grid-template-columns:1fr 380px;gap:18px}
+  @media(max-width:900px){.grid-venta{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+  .card h3{font-size:15px;margin-bottom:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+  .filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+  select,input{width:100%;padding:9px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;color:var(--txt);font-size:14px;outline:none}
+  select:focus,input:focus{border-color:var(--accent)}
+  select:disabled,input:disabled{opacity:.4;cursor:not-allowed}
+  .btn{background:var(--accent);color:#0f172a;border:none;padding:10px 16px;border-radius:8px;
+    cursor:pointer;font-weight:600;font-size:14px;transition:.2s}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.sec{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .btn.ok{background:var(--accent2);color:#fff}
+  .btn.danger{background:var(--danger);color:#fff}
+  .btn.sm{padding:6px 12px;font-size:13px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  tbody tr:hover{background:var(--panel2)}
+  .prod-row{cursor:pointer}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+  .badge.ok{background:#10b98133;color:var(--accent2)}
+  .badge.low{background:#ef444433;color:#fca5a5}
+  .carrito-vacio{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
+  .item-carrito{display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .item-carrito small{display:block;color:var(--muted);font-size:11px}
+  .qty{display:flex;align-items:center;gap:6px}
+  .qty button{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);cursor:pointer;font-weight:700}
+  .total-box{border-top:2px solid var(--accent);margin-top:12px;padding-top:12px}
+  .total-linea{display:flex;justify-content:space-between;margin:4px 0;font-size:14px}
+  .total-final{font-size:22px;font-weight:700;color:var(--accent)}
+  .toggle-precio{display:flex;gap:6px;margin-bottom:12px}
+  .toggle-precio button{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);cursor:pointer;font-size:13px;font-weight:600}
+  .toggle-precio button.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .stat .val{font-size:26px;font-weight:700;color:var(--accent);margin-top:6px}
+  .stat .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  .toast{position:fixed;bottom:22px;right:22px;background:var(--accent2);color:#fff;
+    padding:12px 20px;border-radius:8px;font-weight:600;opacity:0;transition:.3s;pointer-events:none;z-index:9999}
+  .toast.show{opacity:1}
+  h2.titulo{font-size:18px;margin-bottom:14px}
+
+  /* MODAL DE COBRO */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;
+    align-items:center;justify-content:center;z-index:1000;padding:16px;overflow-y:auto}
+  .modal-overlay.activo{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    width:100%;max-width:460px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5);
+    max-height:90vh;overflow-y:auto;margin:auto}
+  .modal h2{font-size:20px;margin-bottom:6px;color:var(--accent)}
+  .modal .subtotal-line{display:flex;justify-content:space-between;padding:6px 0;
+    border-bottom:1px dashed var(--line);font-size:14px}
+  .modal .total-grande{display:flex;justify-content:space-between;align-items:center;
+    margin:14px 0;padding:14px;background:var(--panel2);border-radius:10px}
+  .modal .total-grande span:first-child{font-size:14px;color:var(--muted)}
+  .modal .total-grande span:last-child{font-size:28px;font-weight:700;color:var(--accent)}
+  .formas-pago{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+  .formas-pago button{padding:12px;border-radius:10px;border:2px solid var(--line);
+    background:var(--panel2);color:var(--txt);cursor:pointer;font-weight:600;font-size:14px;transition:.2s}
+  .formas-pago button.active{border-color:var(--accent2);background:#10b98122;color:var(--accent2)}
+  .campo{margin-bottom:12px}
+  .campo label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase}
+  .campo input{font-size:20px;font-weight:700;text-align:right;padding:12px}
+  .cambio-box{background:#10b98122;border:1px solid var(--accent2);border-radius:10px;
+    padding:14px;text-align:center;margin:14px 0}
+  .cambio-box .lbl{font-size:12px;color:var(--accent2);text-transform:uppercase;letter-spacing:1px}
+  .cambio-box .val{font-size:32px;font-weight:700;color:var(--accent2)}
+  .cambio-box .val.negativo{color:var(--danger)}
+  .modal-actions{display:flex;gap:8px;margin-top:16px}
+  .modal-actions button{flex:1;padding:14px;font-size:15px}
+  .ticket{background:#fff;color:#000;padding:18px;border-radius:8px;font-family:'Courier New',monospace;
+    font-size:13px;max-width:340px;margin:14px auto}
+  .ticket h3{text-align:center;font-size:15px;margin-bottom:8px;color:#000}
+  .ticket .linea{display:flex;justify-content:space-between;padding:2px 0}
+  .ticket hr{border:none;border-top:1px dashed #000;margin:8px 0}
+  .info-beta{background:#f59e0b22;border:1px solid var(--accent);border-radius:8px;
+    padding:10px 14px;margin-bottom:16px;font-size:13px}
+  .info-beta b{color:var(--accent)}
+</style>
 </head>
 <body>
 
-<h2>Venta de refacciones</h2>
+<header>
+  <h1>🔧 APA <span>HULES Y SOPORTES</span> — Punto de Venta</h1>
+  <span id="fecha-hoy" style="color:var(--muted);font-size:13px"></span>
+</header>
 
-<div class="filtros">
-  <label>Marca:
-    <select id="marca">
-      <option value="">Selecciona</option>
-      <option value="ACURA">ACURA</option>
-      <option value="BMW">BMW</option>
-      <option value="FORD">FORD</option>
-    </select>
-  </label>
+<nav>
+  <button class="active" data-vista="venta">🛒 Venta</button>
+  <button data-vista="inventario">📦 Inventario</button>
+  <button data-vista="reportes">📊 Reportes</button>
+</nav>
 
-  <label>Modelo:
-    <select id="modelo">
-      <option value="">Selecciona</option>
-    </select>
-  </label>
+<main>
 
-  <label>Año:
-    <input type="number" id="anio" placeholder="Ej. 2006">
-  </label>
+  <!-- ============ VISTA VENTA ============ -->
+  <section id="vista-venta" class="vista activa">
+    <div class="info-beta">
+      <b>BETA:</b> Este POS tiene 18 productos de muestra extraídos del catálogo APA.
+      Usa el botón <b>📦 Inventario → Importar datos</b> cuando tengas tu catálogo completo en JSON.
+    </div>
 
-  <label>Motor:
-    <input type="text" id="motor" placeholder="Ej. 2.0 L4">
-  </label>
+    <div class="grid-venta">
 
-  <button onclick="filtrar()">Filtrar</button>
+      <!-- Catálogo -->
+      <div>
+        <div class="card">
+          <h3>🚗 Paso 1 — Selecciona el vehículo</h3>
+          <div class="filtros">
+            <div><label>Marca *</label><select id="fMarca"><option value="">Selecciona</option></select></div>
+            <div><label>Modelo *</label><select id="fModelo" disabled><option value="">Selecciona marca</option></select></div>
+            <div><label>Año *</label><select id="fAnio" disabled><option value="">Selecciona modelo</option></select></div>
+            <div><label>Motor</label><select id="fMotor" disabled><option value="">Todos</option></select></div>
+            <div><label>Categoría</label><select id="fCategoria" disabled><option value="">Todas</option></select></div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sec sm" onclick="limpiarFiltros()">Limpiar filtros</button>
+            <span id="estadoFiltro" style="color:var(--muted);font-size:13px;align-self:center"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📋 Paso 2 — Productos compatibles <span id="contadorProd" style="color:var(--muted);font-weight:400"></span></h3>
+          <div id="sinFiltro" style="text-align:center;color:var(--muted);padding:40px 20px;font-size:15px">
+            🔍 Selecciona <b>Marca</b>, <b>Modelo</b> y <b>Año</b> para ver los productos compatibles.<br>
+            <small style="display:block;margin-top:8px">El catálogo no se muestra completo para evitar errores de venta.</small>
+          </div>
+          <table id="tablaProductosWrap" style="display:none">
+            <thead>
+              <tr><th>#APA</th><th>Producto</th><th>Aplicación</th><th>Precio</th><th>Stock</th></tr>
+            </thead>
+            <tbody id="tablaProductos"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Carrito -->
+      <div>
+        <div class="card" style="position:sticky;top:16px">
+          <h3>🧾 Ticket de venta</h3>
+
+          <div class="toggle-precio">
+            <button id="btnMostrador" class="active" onclick="setTipoCliente('mostrador')">Público</button>
+            <button id="btnTaller" onclick="setTipoCliente('taller')">Taller</button>
+          </div>
+
+          <div id="carrito"></div>
+
+          <div class="total-box" id="totalBox" style="display:none">
+            <div class="total-linea"><span>Artículos:</span><span id="numItems">0</span></div>
+            <div class="total-linea"><span>Subtotal:</span><span id="subtotal">$0</span></div>
+            <div class="total-linea"><span>IVA (16%):</span><span id="iva">$0</span></div>
+            <div class="total-linea total-final"><span>Total:</span><span id="total">$0</span></div>
+            <button class="btn ok" style="width:100%;margin-top:12px;padding:14px;font-size:16px" onclick="abrirCobro()">
+              💵 COBRAR
+            </button>
+            <button class="btn danger sm" style="width:100%;margin-top:8px" onclick="vaciarCarrito()">
+              Cancelar venta
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ VISTA INVENTARIO ============ -->
+  <section id="vista-inventario" class="vista">
+    <h2 class="titulo">📦 Gestión de inventario</h2>
+
+    <div class="card">
+      <h3>➕ Agregar nuevo producto</h3>
+      <div class="form-grid">
+        <div><label>#APA</label><input id="nSku" placeholder="16579"></div>
+        <div><label>Descripción</label><input id="nNombre" placeholder="Soporte motor"></div>
+        <div><label>Marca producto</label><input id="nMarca" placeholder="APA"></div>
+        <div><label>Categoría</label><input id="nCategoria" placeholder="Soportes"></div>
+        <div><label>Precio público</label><input id="nPMostrador" type="number" placeholder="450"></div>
+        <div><label>Precio taller</label><input id="nPTaller" type="number" placeholder="320"></div>
+        <div><label>Stock inicial</label><input id="nStock" type="number" placeholder="10"></div>
+      </div>
+      <button class="btn" onclick="agregarProducto()">Guardar producto</button>
+      <button class="btn sec" onclick="exportarDatos()">⬇️ Exportar datos (JSON)</button>
+      <button class="btn sec" onclick="document.getElementById('importFile').click()">⬆️ Importar datos</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importarDatos(event)">
+    </div>
+
+    <div class="card">
+      <h3>Productos registrados</h3>
+      <table>
+        <thead><tr><th>#APA</th><th>Producto</th><th>Marca</th><th>Categoría</th><th>P. Público</th><th>P. Taller</th><th>Stock</th><th></th></tr></thead>
+        <tbody id="tablaInventario"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ VISTA REPORTES ============ -->
+  <section id="vista-reportes" class="vista">
+    <h2 class="titulo">📊 Reportes de venta</h2>
+
+    <div class="stats">
+      <div class="stat"><div class="lbl">Ventas de hoy</div><div class="val" id="rHoy">$0</div></div>
+      <div class="stat"><div class="lbl">Tickets hoy</div><div class="val" id="rTicketsHoy">0</div></div>
+      <div class="stat"><div class="lbl">Ventas totales</div><div class="val" id="rTotal">$0</div></div>
+      <div class="stat"><div class="lbl">Tickets históricos</div><div class="val" id="rTickets">0</div></div>
+      <div class="stat"><div class="lbl">Productos en stock</div><div class="val" id="rStock">0</div></div>
+      <div class="stat"><div class="lbl">Valor inventario</div><div class="val" id="rValorInv">$0</div></div>
+    </div>
+
+    <div class="card">
+      <h3>🔥 Top 5 productos más vendidos</h3>
+      <table><thead><tr><th>Producto</th><th>Unidades</th><th>Ingresos</th></tr></thead>
+      <tbody id="tablaTop"></tbody></table>
+    </div>
+
+    <div class="card">
+      <h3>🧾 Últimas ventas</h3>
+      <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Pago</th><th>Artículos</th><th>Total</th></tr></thead>
+      <tbody id="tablaVentas"></tbody></table>
+      <button class="btn danger sm" style="margin-top:12px" onclick="borrarHistorial()">Borrar historial de ventas</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ MODAL DE COBRO ============ -->
+<div class="modal-overlay" id="modalCobro">
+  <div class="modal" id="modalContenido"></div>
 </div>
 
-<table id="productos">
-  <thead>
-    <tr>
-      <th>#APA</th>
-      <th>Descripción</th>
-      <th>Precio</th>
-      <th>Stock</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<h3>Carrito</h3>
-<table id="carrito">
-  <thead>
-    <tr>
-      <th>#APA</th>
-      <th>Descripción</th>
-      <th>Cantidad</th>
-      <th>Precio</th>
-      <th>Importe</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<h3>Total: $<span id="total">0.00</span></h3>
-<button onclick="abrirPago()">COBRAR</button>
-
-<!-- Modal de pago -->
-<div class="modal" id="modalPago">
-  <h3>Cobrar</h3>
-  <p>Total: $<span id="totalModal">0.00</span></p>
-
-  <label>Forma de pago:
-    <select id="formaPago">
-      <option value="EFECTIVO">Efectivo</option>
-      <option value="TARJETA">Tarjeta</option>
-      <option value="TRANSFERENCIA">Transferencia</option>
-      <option value="MIXTO">Mixto</option>
-    </select>
-  </label>
-
-  <p>Recibido: $<input type="number" id="recibido" oninput="calcularCambio()"></p>
-  <p>Cambio: $<span id="cambio">0.00</span></p>
-
-  <button onclick="confirmarVenta()">Confirmar venta</button>
-  <button onclick="cerrarPago()">Cancelar</button>
+<!-- ============ MODAL DE TICKET ============ -->
+<div class="modal-overlay" id="modalTicket">
+  <div class="modal">
+    <h2 style="text-align:center">✅ Venta realizada</h2>
+    <div id="ticketContenido"></div>
+    <div class="modal-actions">
+      <button class="btn sec" onclick="cerrarTicket()">Cerrar</button>
+      <button class="btn ok" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-let carrito = [];
+/* =========================================================
+   CATÁLOGO DEMO REAL DE APA (18 productos de muestra)
+========================================================= */
+const PRODUCTOS_DEMO = [
+  // ACURA | CSX 3.2 V6
+  { sku:'16579', nombre:'Soporte motor', marca:'APA', categoria:'Soportes',
+    pMostrador:450, pTaller:320, stock:3,
+    aplicaciones:[{marca:'ACURA', modelo:'CSX', a1:2001, a2:2003, motor:'3.2 V6'}] },
+  { sku:'18898', nombre:'Soporte transmisión', marca:'APA', categoria:'Soportes',
+    pMostrador:520, pTaller:380, stock:2,
+    aplicaciones:[{marca:'ACURA', modelo:'CSX', a1:2001, a2:2003, motor:'3.2 V6'}] },
+  { sku:'2184', nombre:'Manguera radiador inferior', marca:'APA', categoria:'Mangueras',
+    pMostrador:280, pTaller:200, stock:8,
+    aplicaciones:[{marca:'ACURA', modelo:'CSX', a1:2001, a2:2003, motor:'3.2 V6'}] },
+  { sku:'60084', nombre:'Kit bases amortiguador', marca:'APA', categoria:'Bases',
+    pMostrador:890, pTaller:650, stock:5,
+    aplicaciones:[{marca:'ACURA', modelo:'CSX', a1:2001, a2:2005, motor:'3.2 V6'}] },
 
-function filtrar() {
-  const marca = document.getElementById('marca').value;
-  const modelo = document.getElementById('modelo').value;
-  const anio = document.getElementById('anio').value;
-  const motor = document.getElementById('motor').value;
+  // ACURA | EL 2.0 L4
+  { sku:'20261', nombre:'Soporte motor', marca:'APA', categoria:'Soportes',
+    pMostrador:480, pTaller:350, stock:6,
+    aplicaciones:[{marca:'ACURA', modelo:'EL', a1:2006, a2:2011, motor:'2.0 L4'}] },
+  { sku:'20270', nombre:'Soporte motor delantero derecho', marca:'APA', categoria:'Soportes',
+    pMostrador:510, pTaller:375, stock:4,
+    aplicaciones:[{marca:'ACURA', modelo:'EL', a1:2006, a2:2011, motor:'2.0 L4'}] },
+  { sku:'2078', nombre:'Manguera paso 5/8" x 14 3/4"', marca:'APA', categoria:'Mangueras',
+    pMostrador:190, pTaller:140, stock:20,
+    aplicaciones:[{marca:'ACURA', modelo:'EL', a1:1997, a2:2000, motor:'1.6 L4'}] },
 
-  // Aquí iría fetch al backend:
-  // fetch(`/api/productos?marca=${marca}&modelo=${modelo}&anio=${anio}&motor=${motor}`)
-  // .then(res => res.json())
-  // .then(data => renderProductos(data));
+  // BMW | 320i 2.0 L4
+  { sku:'21916', nombre:'Soporte motor', marca:'APA', categoria:'Soportes',
+    pMostrador:620, pTaller:470, stock:5,
+    aplicaciones:[{marca:'BMW', modelo:'320i', a1:2000, a2:2005, motor:'2.0 L4'}] },
+  { sku:'60208', nombre:'Base amortiguador delantera', marca:'APA', categoria:'Bases',
+    pMostrador:340, pTaller:250, stock:10,
+    aplicaciones:[{marca:'BMW', modelo:'320i', a1:2000, a2:2005, motor:'2.0 L4'}] },
+  { sku:'60001', nombre:'Base amortiguador trasera', marca:'APA', categoria:'Bases',
+    pMostrador:410, pTaller:310, stock:6,
+    aplicaciones:[{marca:'BMW', modelo:'320i', a1:2012, a2:2018, motor:'2.0 L4'}] },
 
-  // Simulación:
-  const productos = [
-    { id: 1, apa: '16579', desc: 'Soporte motor', precio: 450, stock: 3 },
-    { id: 2, apa: '18898', desc: 'Soporte transmisión', precio: 520, stock: 1 },
-  ];
-  renderProductos(productos);
+  // FORD | F-150 5.0 V8
+  { sku:'20466', nombre:'Soporte motor', marca:'APA', categoria:'Soportes',
+    pMostrador:720, pTaller:540, stock:4,
+    aplicaciones:[{marca:'FORD', modelo:'F-150', a1:2011, a2:2014, motor:'5.0 V8'}] },
+  { sku:'21062', nombre:'Soporte motor izquierdo', marca:'APA', categoria:'Soportes',
+    pMostrador:680, pTaller:510, stock:3,
+    aplicaciones:[{marca:'FORD', modelo:'F-150', a1:2011, a2:2014, motor:'5.0 V8'}] },
+
+  // NISSAN | Sentra 1.8 L4
+  { sku:'21299', nombre:'Soporte transmisión hidráulico', marca:'APA', categoria:'Soportes',
+    pMostrador:540, pTaller:400, stock:7,
+    aplicaciones:[{marca:'NISSAN', modelo:'Sentra', a1:2013, a2:2019, motor:'1.8 L4'}] },
+  { sku:'21298', nombre:'Soporte motor derecho hidráulico', marca:'APA', categoria:'Soportes',
+    pMostrador:590, pTaller:440, stock:5,
+    aplicaciones:[{marca:'NISSAN', modelo:'Sentra', a1:2013, a2:2019, motor:'1.8 L4'}] },
+
+  // VOLKSWAGEN | Jetta 2.0 L4
+  { sku:'18321', nombre:'Buje estabilizadora', marca:'APA', categoria:'Bujes',
+    pMostrador:120, pTaller:85, stock:30,
+    aplicaciones:[{marca:'VOLKSWAGEN', modelo:'Jetta', a1:2005, a2:2018, motor:'2.0 L4'}] },
+  { sku:'762', nombre:'Soporte torsión', marca:'APA', categoria:'Soportes',
+    pMostrador:290, pTaller:215, stock:12,
+    aplicaciones:[{marca:'VOLKSWAGEN', modelo:'Jetta', a1:2005, a2:2018, motor:'2.0 L4'}] },
+
+  // CHEVROLET | Aveo 1.5 L4
+  { sku:'2960', nombre:'Manguera radiador inferior', marca:'APA', categoria:'Mangueras',
+    pMostrador:260, pTaller:190, stock:14,
+    aplicaciones:[{marca:'CHEVROLET', modelo:'Aveo', a1:2018, a2:2021, motor:'1.5 L4'}] },
+  { sku:'21186', nombre:'Soporte motor', marca:'APA', categoria:'Soportes',
+    pMostrador:470, pTaller:345, stock:8,
+    aplicaciones:[{marca:'CHEVROLET', modelo:'Aveo', a1:2018, a2:2021, motor:'1.5 L4'}] },
+];
+
+/* =========================================================
+   ESTADO
+========================================================= */
+let productos = JSON.parse(localStorage.getItem('apa_productos')) || PRODUCTOS_DEMO;
+let ventas    = JSON.parse(localStorage.getItem('apa_ventas'))    || [];
+let carrito   = [];
+let tipoCliente = 'mostrador';
+let ventaEnProceso = null;
+
+const guardar = () => {
+  localStorage.setItem('apa_productos', JSON.stringify(productos));
+  localStorage.setItem('apa_ventas',    JSON.stringify(ventas));
+};
+const fmt = n => n.toLocaleString('es-MX',{style:'currency',currency:'MXN'});
+
+/* =========================================================
+   NAVEGACIÓN
+========================================================= */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick = () => {
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.vista').forEach(x=>x.classList.remove('activa'));
+    b.classList.add('active');
+    document.getElementById('vista-'+b.dataset.vista).classList.add('activa');
+    if(b.dataset.vista==='reportes') renderReportes();
+    if(b.dataset.vista==='inventario') renderInventario();
+  };
+});
+
+/* =========================================================
+   FILTROS EN CASCADA
+========================================================= */
+function llenarMarcas(){
+  const marcas = [...new Set(productos.flatMap(p=>p.aplicaciones.map(a=>a.marca)))].sort();
+  document.getElementById('fMarca').innerHTML =
+    '<option value="">Selecciona</option>' + marcas.map(m=>`<option>${m}</option>`).join('');
 }
 
-function renderProductos(productos) {
-  const tbody = document.querySelector('#productos tbody');
-  tbody.innerHTML = '';
-  productos.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${p.apa}</td>
-      <td>${p.desc}</td>
-      <td>$${p.precio.toFixed(2)}</td>
-      <td>${p.stock}</td>
-      <td><button onclick="agregar(${p.id}, '${p.apa}', '${p.desc}', ${p.precio})">Agregar</button></td>
-    `;
-    tbody.appendChild(tr);
+document.getElementById('fMarca').onchange = () => {
+  const marca = document.getElementById('fMarca').value;
+  const selMod = document.getElementById('fModelo');
+  const selAnio = document.getElementById('fAnio');
+  const selMotor = document.getElementById('fMotor');
+  const selCat = document.getElementById('fCategoria');
+
+  if(!marca){
+    selMod.innerHTML='<option value="">Selecciona marca</option>'; selMod.disabled=true;
+    selAnio.innerHTML='<option value="">Selecciona modelo</option>'; selAnio.disabled=true;
+    selMotor.innerHTML='<option value="">Todos</option>'; selMotor.disabled=true;
+    selCat.innerHTML='<option value="">Todas</option>'; selCat.disabled=true;
+    renderCatalogo(); return;
+  }
+
+  const modelos = [...new Set(
+    productos.flatMap(p=>p.aplicaciones.filter(a=>a.marca===marca).map(a=>a.modelo))
+  )].sort();
+  selMod.innerHTML = '<option value="">Selecciona</option>' + modelos.map(m=>`<option>${m}</option>`).join('');
+  selMod.disabled = false;
+
+  selAnio.innerHTML='<option value="">Selecciona modelo</option>'; selAnio.disabled=true;
+  selMotor.innerHTML='<option value="">Todos</option>'; selMotor.disabled=true;
+  selCat.innerHTML='<option value="">Todas</option>'; selCat.disabled=true;
+  renderCatalogo();
+};
+
+document.getElementById('fModelo').onchange = () => {
+  const marca = document.getElementById('fMarca').value;
+  const modelo = document.getElementById('fModelo').value;
+  const selAnio = document.getElementById('fAnio');
+  const selMotor = document.getElementById('fMotor');
+  const selCat = document.getElementById('fCategoria');
+
+  if(!modelo){
+    selAnio.innerHTML='<option value="">Selecciona modelo</option>'; selAnio.disabled=true;
+    selMotor.innerHTML='<option value="">Todos</option>'; selMotor.disabled=true;
+    selCat.innerHTML='<option value="">Todas</option>'; selCat.disabled=true;
+    renderCatalogo(); return;
+  }
+
+  const anios = new Set();
+  productos.forEach(p=>p.aplicaciones.forEach(a=>{
+    if(a.marca===marca && a.modelo===modelo){
+      for(let y=a.a1;y<=a.a2;y++) anios.add(y);
+    }
+  }));
+  selAnio.innerHTML = '<option value="">Selecciona</option>' +
+    [...anios].sort((a,b)=>b-a).map(y=>`<option>${y}</option>`).join('');
+  selAnio.disabled = false;
+
+  selMotor.innerHTML='<option value="">Todos</option>'; selMotor.disabled=true;
+  selCat.innerHTML='<option value="">Todas</option>'; selCat.disabled=true;
+  renderCatalogo();
+};
+
+document.getElementById('fAnio').onchange = () => {
+  const marca = document.getElementById('fMarca').value;
+  const modelo = document.getElementById('fModelo').value;
+  const anio = parseInt(document.getElementById('fAnio').value);
+  const selMotor = document.getElementById('fMotor');
+  const selCat = document.getElementById('fCategoria');
+
+  if(!anio){
+    selMotor.innerHTML='<option value="">Todos</option>'; selMotor.disabled=true;
+    selCat.innerHTML='<option value="">Todas</option>'; selCat.disabled=true;
+    renderCatalogo(); return;
+  }
+
+  const motores = new Set();
+  const cats = new Set();
+  productos.forEach(p=>p.aplicaciones.forEach(a=>{
+    if(a.marca===marca && a.modelo===modelo && anio>=a.a1 && anio<=a.a2){
+      if(a.motor && a.motor!=='-') motores.add(a.motor);
+      cats.add(p.categoria);
+    }
+  }));
+  selMotor.innerHTML = '<option value="">Todos</option>' + [...motores].sort().map(m=>`<option>${m}</option>`).join('');
+  selMotor.disabled = motores.size===0;
+  selCat.innerHTML = '<option value="">Todas</option>' + [...cats].sort().map(c=>`<option>${c}</option>`).join('');
+  selCat.disabled = cats.size===0;
+  renderCatalogo();
+};
+
+document.getElementById('fMotor').onchange = renderCatalogo;
+document.getElementById('fCategoria').onchange = renderCatalogo;
+
+function limpiarFiltros(){
+  document.getElementById('fMarca').value='';
+  document.getElementById('fModelo').innerHTML='<option value="">Selecciona marca</option>'; document.getElementById('fModelo').disabled=true;
+  document.getElementById('fAnio').innerHTML='<option value="">Selecciona modelo</option>'; document.getElementById('fAnio').disabled=true;
+  document.getElementById('fMotor').innerHTML='<option value="">Todos</option>'; document.getElementById('fMotor').disabled=true;
+  document.getElementById('fCategoria').innerHTML='<option value="">Todas</option>'; document.getElementById('fCategoria').disabled=true;
+  renderCatalogo();
+}
+
+/* =========================================================
+   FILTRADO DE PRODUCTOS
+========================================================= */
+function productoCoincide(p){
+  const marca = document.getElementById('fMarca').value;
+  const modelo = document.getElementById('fModelo').value;
+  const anio = parseInt(document.getElementById('fAnio').value);
+  const motor = document.getElementById('fMotor').value;
+  const cat = document.getElementById('fCategoria').value;
+
+  if(!marca || !modelo || !anio) return false;
+  if(cat && p.categoria !== cat) return false;
+
+  return p.aplicaciones.some(a=>{
+    if(a.marca !== marca) return false;
+    if(a.modelo !== modelo) return false;
+    if(anio < a.a1 || anio > a.a2) return false;
+    if(motor && a.motor !== motor) return false;
+    return true;
   });
 }
 
-function agregar(id, apa, desc, precio) {
-  const item = carrito.find(x => x.id === id);
-  if (item) {
-    item.cantidad++;
-  } else {
-    carrito.push({ id, apa, desc, precio, cantidad: 1 });
+/* =========================================================
+   RENDER CATÁLOGO
+========================================================= */
+function renderCatalogo(){
+  const marca = document.getElementById('fMarca').value;
+  const modelo = document.getElementById('fModelo').value;
+  const anio = document.getElementById('fAnio').value;
+
+  const sinFiltro = document.getElementById('sinFiltro');
+  const wrap = document.getElementById('tablaProductosWrap');
+  const tbody = document.getElementById('tablaProductos');
+
+  if(!marca || !modelo || !anio){
+    sinFiltro.style.display='block';
+    wrap.style.display='none';
+    document.getElementById('contadorProd').textContent='';
+    document.getElementById('estadoFiltro').textContent='';
+    return;
   }
+
+  sinFiltro.style.display='none';
+  wrap.style.display='table';
+
+  const lista = productos.filter(productoCoincide);
+  document.getElementById('contadorProd').textContent = `(${lista.length} compatibles)`;
+  document.getElementById('estadoFiltro').textContent = `${marca} ${modelo} ${anio}`;
+
+  if(!lista.length){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">
+      No hay productos registrados para ese vehículo.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(p=>{
+    const precio = tipoCliente==='taller' ? p.pTaller : p.pMostrador;
+    const aplic = p.aplicaciones
+      .filter(a=>a.marca===marca && a.modelo===modelo && anio>=a.a1 && anio<=a.a2)
+      .map(a=>`${a.marca} ${a.modelo} ${a.a1}-${a.a2} ${a.motor||''}`)
+      .join('<br>');
+    const stockBadge = p.stock<=0
+      ? `<span class="badge low">AGOTADO</span>`
+      : p.stock<=5
+        ? `<span class="badge low">${p.stock} bajo</span>`
+        : `<span class="badge ok">${p.stock}</span>`;
+    const disabled = p.stock<=0 ? 'style="opacity:.5;cursor:not-allowed"' : '';
+    return `<tr class="prod-row" ${disabled} onclick="${p.stock>0?`agregarAlCarrito('${p.sku}')`:''}">
+      <td><code style="color:var(--accent)">${p.sku}</code></td>
+      <td><b>${p.nombre}</b><br><small style="color:var(--muted)">${p.marca} · ${p.categoria}</small></td>
+      <td style="font-size:12px;color:var(--muted)">${aplic}</td>
+      <td><b>${fmt(precio)}</b></td>
+      <td>${stockBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* =========================================================
+   CARRITO
+========================================================= */
+function setTipoCliente(t){
+  tipoCliente = t;
+  document.getElementById('btnMostrador').classList.toggle('active', t==='mostrador');
+  document.getElementById('btnTaller').classList.toggle('active', t==='taller');
+  renderCatalogo();
   renderCarrito();
 }
 
-function renderCarrito() {
-  const tbody = document.querySelector('#carrito tbody');
-  tbody.innerHTML = '';
-  let total = 0;
+function agregarAlCarrito(sku){
+  const prod = productos.find(p=>p.sku===sku);
+  if(!prod || prod.stock<=0) return;
+  const item = carrito.find(i=>i.sku===sku);
+  const enCarrito = item ? item.cantidad : 0;
+  if(enCarrito + 1 > prod.stock){
+    toast('Stock insuficiente para '+prod.nombre, true);
+    return;
+  }
+  if(item) item.cantidad++;
+  else carrito.push({sku, cantidad:1});
+  renderCarrito();
+}
 
-  carrito.forEach(item => {
-    const importe = item.precio * item.cantidad;
-    total += importe;
+function cambiarCantidad(sku, delta){
+  const item = carrito.find(i=>i.sku===sku);
+  if(!item) return;
+  const prod = productos.find(p=>p.sku===sku);
+  item.cantidad += delta;
+  if(item.cantidad <= 0) carrito = carrito.filter(i=>i.sku!==sku);
+  if(item.cantidad > prod.stock){ item.cantidad = prod.stock; toast('Stock máximo alcanzado', true); }
+  renderCarrito();
+}
 
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item.apa}</td>
-      <td>${item.desc}</td>
-      <td>${item.cantidad}</td>
-      <td>$${item.precio.toFixed(2)}</td>
-      <td>$${importe.toFixed(2)}</td>
+function vaciarCarrito(){ carrito = []; renderCarrito(); }
+
+function renderCarrito(){
+  const cont = document.getElementById('carrito');
+  const box  = document.getElementById('totalBox');
+
+  if(!carrito.length){
+    cont.innerHTML = '<div class="carrito-vacio">Sin artículos.<br>Filtra un vehículo y agrega productos.</div>';
+    box.style.display='none';
+    return;
+  }
+
+  let subtotal = 0, numItems = 0;
+  cont.innerHTML = carrito.map(i=>{
+    const p = productos.find(x=>x.sku===i.sku);
+    const precio = tipoCliente==='taller' ? p.pTaller : p.pMostrador;
+    const importe = precio * i.cantidad;
+    subtotal += importe; numItems += i.cantidad;
+    return `<div class="item-carrito">
+      <div style="flex:1">
+        <b>${p.nombre}</b>
+        <small>#${p.sku} · ${fmt(precio)} c/u</small>
+      </div>
+      <div class="qty">
+        <button onclick="cambiarCantidad('${i.sku}',-1)">−</button>
+        <span style="min-width:20px;text-align:center">${i.cantidad}</span>
+        <button onclick="cambiarCantidad('${i.sku}',1)">+</button>
+      </div>
+      <div style="min-width:80px;text-align:right"><b>${fmt(importe)}</b></div>
+    </div>`;
+  }).join('');
+
+  const iva = subtotal * 0.16;
+  document.getElementById('numItems').textContent = numItems;
+  document.getElementById('subtotal').textContent = fmt(subtotal);
+  document.getElementById('iva').textContent      = fmt(iva);
+  document.getElementById('total').textContent    = fmt(subtotal + iva);
+  box.style.display='block';
+}
+
+/* =========================================================
+   MODAL DE COBRO
+========================================================= */
+function abrirCobro(){
+  if(!carrito.length) return;
+
+  let subtotal = 0;
+  carrito.forEach(i=>{
+    const p = productos.find(x=>x.sku===i.sku);
+    const precio = tipoCliente==='taller' ? p.pTaller : p.pMostrador;
+    subtotal += precio * i.cantidad;
+  });
+  const iva = subtotal * 0.16;
+  const total = subtotal + iva;
+
+  ventaEnProceso = { subtotal, iva, total, formaPago:'EFECTIVO', pagos:[] };
+
+  document.getElementById('modalContenido').innerHTML = `
+    <h2>💵 Cobrar</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Confirma la forma de pago y el monto recibido</p>
+
+    <div class="subtotal-line"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+    <div class="subtotal-line"><span>IVA (16%)</span><span>${fmt(iva)}</span></div>
+
+    <div class="total-grande">
+      <span>TOTAL A PAGAR</span>
+      <span>${fmt(total)}</span>
+    </div>
+
+    <label style="font-size:12px;color:var(--muted);text-transform:uppercase">Forma de pago</label>
+    <div class="formas-pago">
+      <button type="button" class="active" data-pago="EFECTIVO" onclick="setFormaPago('EFECTIVO')">💵 Efectivo</button>
+      <button type="button" data-pago="TARJETA" onclick="setFormaPago('TARJETA')">💳 Tarjeta</button>
+      <button type="button" data-pago="TRANSFERENCIA" onclick="setFormaPago('TRANSFERENCIA')">🏦 Transfer.</button>
+      <button type="button" data-pago="MIXTO" onclick="setFormaPago('MIXTO')">🔀 Mixto</button>
+    </div>
+
+    <div id="camposPago"></div>
+
+    <div class="cambio-box" id="cambioBox">
+      <div class="lbl">Cambio a devolver</div>
+      <div class="val" id="cambioVal">$0.00</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn sec" onclick="cerrarCobro()">Cancelar</button>
+      <button class="btn ok" onclick="confirmarVenta()">✅ Confirmar venta</button>
+    </div>
+  `;
+
+  setFormaPago('EFECTIVO');
+  document.getElementById('modalCobro').classList.add('activo');
+}
+
+function setFormaPago(forma){
+  ventaEnProceso.formaPago = forma;
+  document.querySelectorAll('.formas-pago button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.pago===forma);
+  });
+
+  const cont = document.getElementById('camposPago');
+  const total = ventaEnProceso.total;
+
+  if(forma==='EFECTIVO'){
+    cont.innerHTML = `
+      <div class="campo">
+        <label>Monto recibido</label>
+        <input type="number" id="montoRecibido" placeholder="0.00" step="0.01" oninput="calcularCambio()">
+      </div>
     `;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById('total').textContent = total.toFixed(2);
-}
-
-function abrirPago() {
-  const total = parseFloat(document.getElementById('total').textContent);
-  if (total <= 0) {
-    alert('El carrito está vacío');
-    return;
+    document.getElementById('montoRecibido').focus();
   }
-  document.getElementById('totalModal').textContent = total.toFixed(2);
-  document.getElementById('recibido').value = '';
-  document.getElementById('cambio').textContent = '0.00';
-  document.getElementById('modalPago').classList.add('activo');
+  else if(forma==='TARJETA'){
+    cont.innerHTML = `
+      <div class="campo">
+        <label>Monto a cobrar</label>
+        <input type="number" id="montoRecibido" value="${total.toFixed(2)}" oninput="calcularCambio()">
+      </div>
+      <div class="campo">
+        <label>Últimos 4 dígitos / Referencia</label>
+        <input type="text" id="referencia" placeholder="1234" maxlength="20">
+      </div>
+    `;
+    calcularCambio();
+  }
+  else if(forma==='TRANSFERENCIA'){
+    cont.innerHTML = `
+      <div class="campo">
+        <label>Monto transferido</label>
+        <input type="number" id="montoRecibido" value="${total.toFixed(2)}" oninput="calcularCambio()">
+      </div>
+      <div class="campo">
+        <label>Referencia / Banco</label>
+        <input type="text" id="referencia" placeholder="BBVA-123456" maxlength="40">
+      </div>
+    `;
+    calcularCambio();
+  }
+  else if(forma==='MIXTO'){
+    cont.innerHTML = `
+      <div class="campo">
+        <label>💵 Efectivo</label>
+        <input type="number" id="montoEfectivo" placeholder="0.00" step="0.01" oninput="calcularCambioMixto()">
+      </div>
+      <div class="campo">
+        <label>💳 Tarjeta</label>
+        <input type="number" id="montoTarjeta" placeholder="0.00" step="0.01" oninput="calcularCambioMixto()">
+      </div>
+      <div class="pago-mixto-lista" id="pagoMixtoLista"></div>
+    `;
+    calcularCambioMixto();
+  }
 }
 
-function cerrarPago() {
-  document.getElementById('modalPago').classList.remove('activo');
-}
-
-function calcularCambio() {
-  const total = parseFloat(document.getElementById('totalModal').textContent);
-  const recibido = parseFloat(document.getElementById('recibido').value) || 0;
+function calcularCambio(){
+  const total = ventaEnProceso.total;
+  const recibido = parseFloat(document.getElementById('montoRecibido')?.value) || 0;
   const cambio = recibido - total;
-  document.getElementById('cambio').textContent = cambio >= 0 ? cambio.toFixed(2) : '0.00';
+  const el = document.getElementById('cambioVal');
+  if(cambio < 0){
+    el.textContent = '- ' + fmt(Math.abs(cambio));
+    el.classList.add('negativo');
+  } else {
+    el.textContent = fmt(cambio);
+    el.classList.remove('negativo');
+  }
 }
 
-function confirmarVenta() {
-  const total = parseFloat(document.getElementById('totalModal').textContent);
-  const recibido = parseFloat(document.getElementById('recibido').value) || 0;
-  const cambio = recibido - total;
+function calcularCambioMixto(){
+  const total = ventaEnProceso.total;
+  const efectivo = parseFloat(document.getElementById('montoEfectivo')?.value) || 0;
+  const tarjeta  = parseFloat(document.getElementById('montoTarjeta')?.value) || 0;
+  const pagado = efectivo + tarjeta;
+  const restante = total - pagado;
+  const cambio = pagado - total;
 
-  if (recibido < total) {
-    alert('El monto recibido es menor al total');
-    return;
+  document.getElementById('pagoMixtoLista').innerHTML = `
+    <div class="fila"><span>Efectivo</span><span>${fmt(efectivo)}</span></div>
+    <div class="fila"><span>Tarjeta</span><span>${fmt(tarjeta)}</span></div>
+    <div class="fila" style="font-weight:700"><span>Pagado</span><span>${fmt(pagado)}</span></div>
+    <div class="fila"><span>Falta por cubrir</span><span>${restante>0?fmt(restante):'$0.00'}</span></div>
+  `;
+
+  const el = document.getElementById('cambioVal');
+  if(cambio < 0){
+    el.textContent = '- ' + fmt(Math.abs(cambio));
+    el.classList.add('negativo');
+  } else {
+    el.textContent = fmt(cambio);
+    el.classList.remove('negativo');
+  }
+}
+
+function cerrarCobro(){
+  document.getElementById('modalCobro').classList.remove('activo');
+  ventaEnProceso = null;
+}
+
+/* =========================================================
+   CONFIRMAR VENTA
+========================================================= */
+function confirmarVenta(){
+  const total = ventaEnProceso.total;
+  const forma = ventaEnProceso.formaPago;
+  let pagado = 0;
+  let detallePagos = [];
+  let referencia = '';
+
+  if(forma==='EFECTIVO'){
+    pagado = parseFloat(document.getElementById('montoRecibido').value) || 0;
+    if(pagado < total){ toast('El monto recibido es menor al total', true); return; }
+    detallePagos = [{forma:'EFECTIVO', monto:pagado}];
+  }
+  else if(forma==='TARJETA'){
+    pagado = parseFloat(document.getElementById('montoRecibido').value) || 0;
+    referencia = document.getElementById('referencia').value;
+    if(pagado < total){ toast('El monto cobrado es menor al total', true); return; }
+    detallePagos = [{forma:'TARJETA', monto:pagado, referencia}];
+  }
+  else if(forma==='TRANSFERENCIA'){
+    pagado = parseFloat(document.getElementById('montoRecibido').value) || 0;
+    referencia = document.getElementById('referencia').value;
+    if(pagado < total){ toast('El monto transferido es menor al total', true); return; }
+    detallePagos = [{forma:'TRANSFERENCIA', monto:pagado, referencia}];
+  }
+  else if(forma==='MIXTO'){
+    const ef = parseFloat(document.getElementById('montoEfectivo').value) || 0;
+    const tj = parseFloat(document.getElementById('montoTarjeta').value) || 0;
+    pagado = ef + tj;
+    if(pagado < total){ toast('El monto pagado es menor al total', true); return; }
+    detallePagos = [
+      {forma:'EFECTIVO', monto:ef},
+      {forma:'TARJETA', monto:tj}
+    ];
   }
 
-  // Aquí iría POST /api/ventas
-  console.log('Venta confirmada', {
-    items: carrito,
+  const cambio = pagado - total;
+
+  const venta = {
+    fecha: new Date().toISOString(),
+    tipoCliente,
+    formaPago: forma,
+    items: carrito.map(i=>{
+      const p = productos.find(x=>x.sku===i.sku);
+      const precio = tipoCliente==='taller' ? p.pTaller : p.pMostrador;
+      return {sku:i.sku, nombre:p.nombre, cantidad:i.cantidad, precio};
+    }),
+    subtotal: ventaEnProceso.subtotal,
+    iva: ventaEnProceso.iva,
     total,
-    recibido,
+    pagado,
     cambio,
-    formaPago: document.getElementById('formaPago').value
+    pagos: detallePagos
+  };
+
+  carrito.forEach(i=>{
+    const p = productos.find(x=>x.sku===i.sku);
+    if(p) p.stock -= i.cantidad;
   });
 
-  alert(`Venta realizada. Cambio: $${cambio.toFixed(2)}`);
+  ventas.push(venta);
+  guardar();
+  mostrarTicket(venta);
   carrito = [];
   renderCarrito();
-  cerrarPago();
+  renderCatalogo();
+  cerrarCobro();
 }
-</script>
 
+/* =========================================================
+   TICKET
+========================================================= */
+function mostrarTicket(venta){
+  const fecha = new Date(venta.fecha);
+  const lineas = venta.items.map(i=>`
+    <div class="linea"><span>${i.cantidad}x ${i.nombre}</span><span>${fmt(i.precio*i.cantidad)}</span></div>
+    <div style="font-size:11px;color:#666;margin-left:12px">#${i.sku}</div>
+  `).join('');
+
+  const pagosLineas = venta.pagos.map(p=>`
+    <div class="linea"><span>${p.forma}${p.referencia?' ('+p.referencia+')':''}</span><span>${fmt(p.monto)}</span></div>
+  `).join('');
+
+  document.getElementById('ticketContenido').innerHTML = `
+    <div class="ticket">
+      <h3>APA HULES Y SOPORTES</h3>
+      <div style="text-align:center;font-size:11px">
+        ${fecha.toLocaleString('es-MX')}<br>
+        Ticket: ${venta.fecha.slice(-6).replace(/[:.]/g,'')}
+      </div>
+      <hr>
+      ${lineas}
+      <hr>
+      <div class="linea"><span>Subtotal</span><span>${fmt(venta.subtotal)}</span></div>
+      <div class="linea"><span>IVA 16%</span><span>${fmt(venta.iva)}</span></div>
+      <div class="linea" style="font-weight:bold;font-size:15px"><span>TOTAL</span><span>${fmt(venta.total)}</span></div>
+      <hr>
+      ${pagosLineas}
+      <div class="linea" style="font-weight:bold"><span>CAMBIO</span><span>${fmt(venta.cambio)}</span></div>
+      <hr>
+      <div style="text-align:center;font-size:11px">¡Gracias por su compra!</div>
+    </div>
+  `;
+  document.getElementById('modalTicket').classList.add('activo');
+}
+
+function cerrarTicket(){
+  document.getElementById('modalTicket').classList.remove('activo');
+}
+
+/* =========================================================
+   INVENTARIO
+========================================================= */
+function renderInventario(){
+  document.getElementById('tablaInventario').innerHTML = productos.map(p=>`
+    <tr>
+      <td><code style="color:var(--accent)">${p.sku}</code></td>
+      <td>${p.nombre}</td>
+      <td>${p.marca}</td>
+      <td>${p.categoria}</td>
+      <td>${fmt(p.pMostrador)}</td>
+      <td>${fmt(p.pTaller)}</td>
+      <td>${p.stock}</td>
+      <td><button class="btn danger sm" onclick="eliminarProducto('${p.sku}')">🗑</button></td>
+    </tr>`).join('');
+}
+
+function agregarProducto(){
+  const sku = document.getElementById('nSku').value.trim();
+  const nombre = document.getElementById('nNombre').value.trim();
+  const marca = document.getElementById('nMarca').value.trim() || 'APA';
+  const categoria = document.getElementById('nCategoria').value.trim() || 'General';
+  const pMostrador = parseFloat(document.getElementById('nPMostrador').value) || 0;
+  const pTaller = parseFloat(document.getElementById('nPTaller').value) || 0;
+  const stock = parseInt(document.getElementById('nStock').value) || 0;
+
+  if(!sku || !nombre){ toast('SKU y nombre son obligatorios', true); return; }
+  if(productos.some(p=>p.sku===sku)){ toast('Ese #APA ya existe', true); return; }
+
+  productos.push({sku, nombre, marca, categoria, pMostrador, pTaller, stock, aplicaciones:[]});
+  guardar();
+  ['nSku','nNombre','nMarca','nCategoria','nPMostrador','nPTaller','nStock']
+    .forEach(id=>document.getElementById(id).value='');
+  renderInventario(); llenarMarcas(); renderCatalogo();
+  toast('Producto agregado');
+}
+
+function eliminarProducto(sku){
+  if(!confirm('¿Eliminar '+sku+'?')) return;
+  productos = productos.filter(p=>p.sku!==sku);
+  guardar(); renderInventario(); llenarMarcas(); renderCatalogo();
+  toast('Producto eliminado');
+}
+
+/* =========================================================
+   REPORTES
+========================================================= */
+function renderReportes(){
+  const hoy = new Date().toDateString();
+  const ventasHoy = ventas.filter(v=>new Date(v.fecha).toDateString()===hoy);
+  const totalHoy  = ventasHoy.reduce((s,v)=>s+v.total,0);
+  const totalHist = ventas.reduce((s,v)=>s+v.total,0);
+
+  document.getElementById('rHoy').textContent        = fmt(totalHoy);
+  document.getElementById('rTicketsHoy').textContent  = ventasHoy.length;
+  document.getElementById('rTotal').textContent       = fmt(totalHist);
+  document.getElementById('rTickets').textContent     = ventas.length;
+
+  const stockTotal = productos.reduce((s,p)=>s+p.stock,0);
+  const valorInv   = productos.reduce((s,p)=>s+(p.stock*p.pMostrador),0);
+  document.getElementById('rStock').textContent    = stockTotal;
+  document.getElementById('rValorInv').textContent = fmt(valorInv);
+
+  const acum = {};
+  ventas.forEach(v=>v.items.forEach(it=>{
+    if(!acum[it.sku]) acum[it.sku] = {nombre:it.nombre, cant:0, ingresos:0};
+    acum[it.sku].cant += it.cantidad;
+    acum[it.sku].ingresos += it.cantidad * it.precio;
+  }));
+  const top = Object.values(acum).sort((a,b)=>b.cant-a.cant).slice(0,5);
+  document.getElementById('tablaTop').innerHTML = top.length
+    ? top.map(t=>`<tr><td>${t.nombre}</td><td>${t.cant}</td><td>${fmt(t.ingresos)}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="text-align:center;color:var(--muted)">Sin ventas aún</td></tr>';
+
+  document.getElementById('tablaVentas').innerHTML = ventas.slice(-10).reverse().map(v=>`
+    <tr>
+      <td>${new Date(v.fecha).toLocaleString('es-MX')}</td>
+      <td>${v.tipoCliente==='taller'?'Taller':'Público'}</td>
+      <td>${v.formaPago}</td>
+      <td>${v.items.reduce((s,i)=>s+i.cantidad,0)}</td>
+      <td><b>${fmt(v.total)}</b></td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Sin ventas</td></tr>';
+}
+
+function borrarHistorial(){
+  if(!confirm('¿Borrar TODO el historial de ventas?')) return;
+  ventas = []; guardar(); renderReportes(); toast('Historial borrado');
+}
+
+/* =========================================================
+   EXPORTAR / IMPORTAR
+========================================================= */
+function exportarDatos(){
+  const data = {productos, ventas};
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'apa_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+function importarDatos(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(data.productos) productos = data.productos;
+      if(data.ventas)    ventas    = data.ventas;
+      guardar(); llenarMarcas(); renderCatalogo(); renderInventario(); renderReportes();
+      toast('Datos importados');
+    }catch(err){ toast('Archivo inválido', true); }
+  };
+  reader.readAsText(file);
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+let toastTimer;
+function toast(msg, error=false){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = error ? 'var(--danger)' : 'var(--accent2)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* =========================================================
+   INICIALIZACIÓN
+========================================================= */
+document.getElementById('fecha-hoy').textContent =
+  new Date().toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+llenarMarcas();
+renderCatalogo();
+renderCarrito();
+renderInventario();
+</script>
 </body>
 </html>
